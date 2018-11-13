@@ -19,6 +19,7 @@ type
     ImageClow: TImage;
     LabelParticipantName: TLabel;
     Panel: TPanel;
+    RadioGroupCondition: TRadioGroup;
     Timer: TTimer;
     procedure ButtonStartExperimentClick(Sender: TObject);
 		procedure FormCreate(Sender: TObject);
@@ -29,7 +30,7 @@ type
     procedure TimerNextObservation(Sender: TObject);
     procedure TimerFinishTest(Sender: TObject);
   private
-
+    function ConditionAsString : string;
   public
     {$IFDEF WINDOWS}
     OriginalBounds: TRect;
@@ -50,24 +51,30 @@ uses experiment, TabDelimitedReport.Custom;
 
 { TForm1 }
 
+var IsRunning : Boolean = False;
+
 procedure TForm1.ButtonStartExperimentClick(Sender: TObject);
 begin
   Panel.Hide;
-  ShowMessage(
-    'O notebook dará a você todas as instruções para a realização da tarefa. '+
-    'Você será informado quando a tarefa terminar, então não levante '+
-    'enquanto não for informado.'
-  );
-  ShowMessage(
-    'Clique na tela e encontre o palhaço.'
-  );
+  //ShowMessage(
+  //  'O notebook dará a você todas as instruções para a realização da tarefa. '+
+  //  'Você será informado quando a tarefa terminar, então não levante '+
+  //  'enquanto não for informado.'
+  //);
+  //ShowMessage(
+  //  'Clique na tela e encontre o palhaço.'
+  //);
   {$IFDEF WINDOWS}SwitchFullScreen;{$ENDIF}
   {$IFDEF LINUX}WindowState := wsFullScreen;{$ENDIF}
-  Timer.Interval:= 5000;
-  Timer.OnTimer := @TimerNextObservation;
   Report.Filename := Application.ExeName;
-  StartExperiment(Self, EditParticipantName.Text);
+  InitializeCondition(ConditionAsString);
+  StartExperiment(Self,
+    Timer,
+    @TimerNextObservation,
+    @TimerFinishTest,
+    EditParticipantName.Text);
   Invalidate;
+  IsRunning:=True;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -77,16 +84,13 @@ end;
 
 procedure TForm1.FormKeyPress(Sender: TObject; var Key: char);
 begin
-  if ExperimentalCondition = ConditionTest then
+  if IsRunning then
   begin
-    if (Key = #32) and (Timer.Enabled = False) then
-    begin
-      Color := clGreen;
-      Timer.Interval:= 60000 * 5;
-      Timer.OnTimer := @TimerFinishTest;
-      Timer.Enabled := True;
-    end;
-  end;
+    if Key = #32 then
+      case CurrentScreen of
+        BlackBackground: NextScreen;
+      end;
+  end else ShowMessage('A sessão acabou, você pode fechar a janela.');
 end;
 
 procedure TForm1.FormMouseDown(Sender: TObject; Button: TMouseButton;
@@ -94,17 +98,23 @@ procedure TForm1.FormMouseDown(Sender: TObject; Button: TMouseButton;
 var
   CursorPos : TPoint;
 begin
-  CursorPos := Point(X, Y);
-  Report.WriteRow(ConditionAsString, X, Y);
-  if ExperimentalCondition <> ConditionTest then
-  if InCircle(CoinPoint, CursorPos) then
-    begin
-      Move(ImageCoin, CoinPoint);
-      Move(ImageClow, ClowPoint);
-      ImageCoin.Show;
-      ImageClow.Show;
-      Timer.Enabled := True;
+  if IsRunning then
+  begin
+    CursorPos := Point(X, Y);
+    Report.WriteRow(X, Y);
+    case CurrentScreen of
+      StimuliAtScreenLeft..StimuliAtScreenRight:
+        if InCircle(CoinPoint, CursorPos) then
+        begin
+          Report.WriteRow(['+']);
+          Move(ImageCoin, CoinPoint);
+          Move(ImageClow, ClowPoint);
+          ImageCoin.Show;
+          ImageClow.Show;
+          Timer.Enabled := True;
+        end;
     end;
+  end;
 end;
 
 procedure TForm1.FormPaint(Sender: TObject);
@@ -119,7 +129,7 @@ begin
   ImageClow.Hide;
   Invalidate;
   CentralizeCursorPos;
-  NextCondition;
+  NextScreen;
 end;
 
 procedure TForm1.TimerFinishTest(Sender: TObject);
@@ -127,10 +137,17 @@ begin
   Timer.Enabled := False;
   ImageCoin.Show;
   ImageClow.Show;
+  NextScreen;
+  IsRunning := False;
 
-  Timer.Interval:= 5000;
-  Timer.OnTimer := @TimerNextObservation;
-  Timer.Enabled := True;
+  //Timer.Interval:= 5000;
+  //Timer.OnTimer := @TimerNextObservation;
+  //Timer.Enabled := True;
+end;
+
+function TForm1.ConditionAsString: string;
+begin
+  with RadioGroupCondition do Result := Items[ItemIndex];
 end;
 
 {$IFDEF WINDOWS}

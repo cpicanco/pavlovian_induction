@@ -16,24 +16,33 @@ procedure Move(AImage : TImage; ACenter: TPoint);
 function InCircle(ACenter, APoint : TPoint): Boolean;
 
 procedure ResizeStimuli(ACoin, AClow : TImage);
-procedure StartExperiment(ABackGround : TCustomControl;
+procedure StartExperiment(ABackGround : TCustomControl; ATimer : TTimer;
+  ATimerNextObservation: TNotifyEvent;
+  ATimerFinishTest : TNotifyEvent;
   AParticipantName : string);
-procedure NextCondition;
-function ConditionAsString : string;
+procedure NextScreen;
+function ScreenAsString : string;
+
+procedure InitializeCondition(ACondition : string);
 
 
-type TExperimentalCondition = (ConditionTest, ConditionA,  ConditionB);
+type TExperimentalScreen = (Test, BlackBackground, StimuliAtScreenLeft,  StimuliAtScreenRight);
 var CoinPoint : TPoint;
 var ClowPoint : TPoint;
-var ExperimentalCondition : TExperimentalCondition;
+var CurrentScreen : TExperimentalScreen;
+var ExperimentalCondition : string;
 
 implementation
 
-uses Dialogs, TabDelimitedReport.Custom;
+uses TabDelimitedReport.Custom;
 
-var Conditions : array of TExperimentalCondition;
-var CurrentCondition : integer = -1;
+var Screens : array of TExperimentalScreen;
+var ScreenIndex : integer = -1;
 var Background : TCustomControl = nil;
+var Timer : TTimer = nil;
+var TimerNextObservation : TNotifyEvent = nil;
+var TimerFinishTest : TNotifyEvent = nil;
+
 
 function ConditionACoinPoint : TPoint;
 begin
@@ -60,6 +69,14 @@ end;
 function CentralPoint : TPoint;
 begin
   Result := Point(Background.Width div 2, Background.Height div 2);
+end;
+
+function ConditionCoinPoint :TPoint;
+begin
+  case ExperimentalCondition of
+    'Condição A' : Result := ConditionACoinPoint;
+    'Condição B' : Result := ConditionBCoinPoint;
+  end;
 end;
 
 function InsideCircle(ACenterX, ACenterY, ARadius, AX, AY : integer): Boolean; inline;
@@ -121,10 +138,10 @@ begin
   AImage.Top := ACenter.Y - (AImage.Height div 2);
 end;
 
-procedure StartCondition(ACondition : TExperimentalCondition);
+procedure LoadScreen(AScreen : TExperimentalScreen);
   procedure StartConditionA;
   begin
-    ExperimentalCondition := ConditionA;
+    CurrentScreen := StimuliAtScreenLeft;
     CentralizeCursorPos;
     CoinPoint := ConditionACoinPoint;
     ClowPoint := ConditionAClowPoint;
@@ -132,7 +149,7 @@ procedure StartCondition(ACondition : TExperimentalCondition);
   end;
   procedure StartConditionB;
   begin
-    ExperimentalCondition := ConditionB;
+    CurrentScreen := StimuliAtScreenRight;
   	CentralizeCursorPos;
   	CoinPoint := ConditionBCoinPoint;
   	ClowPoint := ConditionBClowPoint;
@@ -140,72 +157,84 @@ procedure StartCondition(ACondition : TExperimentalCondition);
   end;
   procedure StartTest;
   begin
-    ExperimentalCondition := ConditionTest;
-    Background.Color := clBlack
+    CurrentScreen := Test;
+    Background.Color := clGreen;
+    Report.WriteRow(['TESTE']);
+    if Timer.Enabled = False then
+    begin
+      Timer.Interval:= 60000 * 3;
+      Timer.OnTimer := TimerFinishTest;
+      Timer.Enabled := True;
+    end;
+  end;
+  procedure StartBlackBackground;
+  begin
+    CurrentScreen := BlackBackground;
+    Background.Color := clBlack;
   end;
 begin
-  case ACondition of
-    ConditionA : StartConditionA;
-    ConditionB : StartConditionB;
-    ConditionTest : StartTest;
+  case AScreen of
+    StimuliAtScreenLeft : StartConditionA;
+    StimuliAtScreenRight : StartConditionB;
+    BlackBackground : StartBlackBackground;
+    Test : StartTest;
   end;
 end;
 
-procedure StartExperiment(ABackGround: TCustomControl; AParticipantName : string);
+procedure StartExperiment(ABackGround: TCustomControl; ATimer : TTimer;
+  ATimerNextObservation: TNotifyEvent;
+  ATimerFinishTest : TNotifyEvent;
+  AParticipantName : string);
+var
+  LP : TPoint;
 begin
   Background := ABackGround;
+  TimerNextObservation:=ATimerNextObservation;
+  TimerFinishTest:=ATimerFinishTest;
+  Timer := ATimer;
+  Timer.Interval:= 1000;
+  Timer.OnTimer := TimerNextObservation;
+  LP := ConditionCoinPoint;
   Report.StartTime := GetTickCount64;
   Report.WriteRow(['Participante:', AParticipantName]);
+  Report.WriteRow(['Condição:', ExperimentalCondition]);
+  Report.WriteRow(['Tamanho da Tela:', Background.Width.ToString+','+Background.Height.ToString]);
+  Report.WriteRow(['Posição da Moeda:', LP.x.ToString+','+LP.y.ToString]);
+  NextScreen;
   Report.WriteHeader;
-  NextCondition;
 end;
 
-procedure NextCondition;
+procedure NextScreen;
 begin
-  Inc(CurrentCondition);
-  if CurrentCondition < Length(Conditions) then
-    StartCondition(Conditions[CurrentCondition])
+  Inc(ScreenIndex);
+  if ScreenIndex < Length(Screens) then
+    LoadScreen(Screens[ScreenIndex])
   else
-    begin
-      ShowMessage('O experimento chegou ao final. Obrigado por sua participação!');
-      Report.WriteFooter;
-      Report.Free;
-    end;
+    Report.WriteFooter;
 end;
 
-function ConditionAsString: string;
+function ScreenAsString: string;
 begin
-  WriteStr(Result, ExperimentalCondition);
+  WriteStr(Result, CurrentScreen);
 end;
 
-procedure InitializeConditions;
+procedure InitializeCondition(ACondition: string);
 var
   i: Integer;
+  LConditionScreen : TExperimentalScreen;
 begin
-  SetLength(Conditions, 6);
-  i := Random(1);
-  if i = 0 then
-  begin
-    Conditions[0] := ConditionA;
-    Conditions[1] := ConditionB;
-    Conditions[2] := ConditionA;
-    Conditions[3] := ConditionB;
-    Conditions[4] := ConditionA;
-  end
-  else
-  begin
-    Conditions[0] := ConditionB;
-    Conditions[1] := ConditionA;
-    Conditions[2] := ConditionB;
-    Conditions[3] := ConditionA;
-    Conditions[4] := ConditionB;
+  SetLength(Screens, 9);
+  Screens[Low(Screens)] := BlackBackground;
+  ExperimentalCondition := ACondition;
+  case ExperimentalCondition of
+    'Condição A': LConditionScreen := StimuliAtScreenLeft;
+    'Condição B': LConditionScreen := StimuliAtScreenRight;
   end;
-  Conditions[5] := ConditionTest;
+  for i := Low(Screens)+1 to High(Screens)-2 do
+    Screens[i] := LConditionScreen;
+  Screens[High(Screens)-1] := BlackBackground;
+  Screens[High(Screens)] := Test;
 end;
-
-initialization
-  Randomize;
-  InitializeConditions;
 
 
 end.

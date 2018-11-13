@@ -2894,17 +2894,17 @@ object Form1: TForm1
   end
   object Panel: TPanel
     Left = 8
-    Height = 192
+    Height = 312
     Top = 8
     Width = 256
-    ClientHeight = 192
+    ClientHeight = 312
     ClientWidth = 256
     ParentColor = False
     TabOrder = 0
     object ButtonStartExperiment: TButton
       Left = 8
       Height = 113
-      Top = 72
+      Top = 192
       Width = 240
       Caption = 'Começar'
       OnClick = ButtonStartExperimentClick
@@ -2912,18 +2912,41 @@ object Form1: TForm1
     end
     object LabelParticipantName: TLabel
       Left = 8
-      Height = 17
+      Height = 18
       Top = 8
-      Width = 153
+      Width = 134
       Caption = 'Nome do participante:'
       ParentColor = False
     end
     object EditParticipantName: TEdit
       Left = 8
-      Height = 27
+      Height = 28
       Top = 35
       Width = 240
       TabOrder = 1
+    end
+    object RadioGroupCondition: TRadioGroup
+      Left = 10
+      Height = 114
+      Top = 71
+      Width = 236
+      AutoFill = True
+      Caption = 'Condição'
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 1
+      ClientHeight = 94
+      ClientWidth = 232
+      ItemIndex = 0
+      Items.Strings = (
+        'Condição A'
+        'Condição B'
+      )
+      TabOrder = 2
     end
   end
   object Timer: TTimer

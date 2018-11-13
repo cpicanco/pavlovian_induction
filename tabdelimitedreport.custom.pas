@@ -24,14 +24,13 @@ type
   public
     procedure WriteFooter;
     procedure WriteHeader;
-    procedure WriteRow(ACondition : string; AX: integer = -1; AY : integer = -1); overload;
+    procedure WriteRow(AX: integer = -1; AY : integer = -1); overload;
     property StartTime : LongWord read FStartTime write FStartTime;
   end;
 
 
 resourcestring
   // header, column names of the report
-  RSCondition = 'Condição';
   RSMouseX = 'MouseX';
   RSMouseY = 'MouseY';
   RSTime = 'Tempo(ms)';
@@ -54,10 +53,10 @@ end;
 procedure TCustomReport.WriteHeader;
 begin
   WriteRow([RSBegin, TimeToStr(Now)]);
-  WriteRow([RSTime, RSCondition, RSMouseX, RSMouseY]);
+  WriteRow([RSTime, RSMouseX, RSMouseY]);
 end;
 
-procedure TCustomReport.WriteRow(ACondition: string; AX: integer; AY: integer);
+procedure TCustomReport.WriteRow(AX: integer; AY: integer);
 var
   LX : string = 'NA';
   LY : string = 'NA';
@@ -66,7 +65,7 @@ begin
   if AX = -1 then { do nothing } else WriteStr(LX, AX);
   if AY = -1 then { do nothing } else WriteStr(LY, AY);
   WriteStr(LTime, GetTickCount64-FStartTime);
-  WriteRow([LTime, ACondition, LX, LY]);
+  WriteRow([LTime, LX, LY]);
 end;
 
 initialization
