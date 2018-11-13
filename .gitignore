@@ -1,0 +1,10 @@
+*.dbg
+*.exe
+*.ico
+*.lps
+*.res
+*.zip
+*.txt
+backup/*
+lib/*
+clicking_at_the_green_void_linux
