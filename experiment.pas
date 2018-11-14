@@ -19,6 +19,8 @@ procedure ResizeStimuli(ACoin, AClow : TImage);
 procedure StartExperiment(ABackGround : TCustomControl; ATimer : TTimer;
   ATimerNextObservation: TNotifyEvent;
   ATimerFinishTest : TNotifyEvent;
+  ATimerInterval : integer;
+  ADiameter : integer;
   AParticipantName : string);
 procedure NextScreen;
 function ScreenAsString : string;
@@ -42,7 +44,7 @@ var Background : TCustomControl = nil;
 var Timer : TTimer = nil;
 var TimerNextObservation : TNotifyEvent = nil;
 var TimerFinishTest : TNotifyEvent = nil;
-
+var Diameter : integer = 1;
 
 function ConditionACoinPoint : TPoint;
 begin
@@ -95,7 +97,7 @@ const PixelsInCentimeter = 28 { 72 dpi monitor };
 function InCircle(ACenter, APoint : TPoint): Boolean;
 begin
   Result := InsideCircle(
-   ACenter.X, ACenter.Y, PixelsInCentimeter, APoint.X, APoint.Y);
+   ACenter.X, ACenter.Y, PixelsInCentimeter*Diameter, APoint.X, APoint.Y);
 end;
 
 procedure ResizeStimuli(ACoin, AClow : TImage);
@@ -184,15 +186,18 @@ end;
 procedure StartExperiment(ABackGround: TCustomControl; ATimer : TTimer;
   ATimerNextObservation: TNotifyEvent;
   ATimerFinishTest : TNotifyEvent;
+  ATimerInterval : integer;
+  ADiameter : integer;
   AParticipantName : string);
 var
   LP : TPoint;
 begin
   Background := ABackGround;
+  Diameter:=ADiameter;
   TimerNextObservation:=ATimerNextObservation;
   TimerFinishTest:=ATimerFinishTest;
   Timer := ATimer;
-  Timer.Interval:= 1000;
+  Timer.Interval:= ATimerInterval;
   Timer.OnTimer := TimerNextObservation;
   LP := ConditionCoinPoint;
   Report.StartTime := GetTickCount64;

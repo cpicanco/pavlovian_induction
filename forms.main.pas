@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls;
+  ExtCtrls, Spin, XMLPropStorage;
 
 type
 
@@ -17,10 +17,17 @@ type
     EditParticipantName: TEdit;
     ImageCoin: TImage;
     ImageClow: TImage;
+    LabelConsequenceTime: TLabel;
+    LabelClickDiameter: TLabel;
+    LabelMilliseconds: TLabel;
+    LabelMilliseconds1: TLabel;
     LabelParticipantName: TLabel;
     Panel: TPanel;
     RadioGroupCondition: TRadioGroup;
+    SpinEditConsequenceTime: TSpinEdit;
+    SpinEditClickDiameter: TSpinEdit;
     Timer: TTimer;
+    XMLPropStorage: TXMLPropStorage;
     procedure ButtonStartExperimentClick(Sender: TObject);
 		procedure FormCreate(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -72,6 +79,8 @@ begin
     Timer,
     @TimerNextObservation,
     @TimerFinishTest,
+    SpinEditConsequenceTime.Value,
+    SpinEditClickDiameter.Value,
     EditParticipantName.Text);
   Invalidate;
   IsRunning:=True;
